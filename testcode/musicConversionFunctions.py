@@ -99,6 +99,12 @@ def convertFileToFlac(file):
     return "{}.flac".format(basename)
 
 
+def expandHomeDirectoryPath(file):
+    """Changes the `~` for the actual home directory path of a user."""
+    if "~" in file:
+        file = file.replace("~", expanduser("~") )
+    return file
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 :
@@ -107,8 +113,5 @@ if __name__ == "__main__":
         file= sys.argv[1] # 2nd CLI will be used for the input file
     
     #change abbreviation to path to home of user
-    if "~" in file:
-        file = file.replace("~", expanduser("~") )
-        print(file)
-
+    file= expandHomeDirectoryPath(file)
     print(convertFileToFlac(file))

@@ -4,6 +4,7 @@ Programmer: Chris Blanks
 Date: Late June 2019
 Purpose: This script is for testing out the Kivy API.
 """
+
 from os.path import sep, expanduser
 import sys
 
@@ -20,6 +21,10 @@ from kivy.uix.slider import Slider
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
+
+#Backend functions modules
+import metadataTagFunctions as mdt
+import musicConversionFunctions as mcf
 
 
 class ChrisWindow(GridLayout):
