@@ -5,14 +5,14 @@ editing flac metadata. The Kivy API was used for creating the GUI. Several CLI p
 were used in order to convert file types (e.g. .wav to .flac) and set metadata.
 
 ---
-**Currently, there's only a demo for this application, which has basic functionality and a bare bones UI.**
+*Currently, there's only a demo for this application, which has basic functionality and a bare bones UI.*
 ---
 ## Dependencies:
 
-*Python 3rd part module depencies*
+*Python 3rd party module dependencies*
 * kivy
 
-*CLI Program depencies*
+*CLI Program dependencies*
 * ffmpeg
 * metaflac
 * soundconverter
