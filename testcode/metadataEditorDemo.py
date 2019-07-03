@@ -2,9 +2,10 @@
 """
 Programmer: Chris Blanks
 Date: Late June 2019
-Purpose: This script is for testing out the Kivy API.
+Purpose: This script is the metadata editor demo application.
 """
 
+import os.path
 from os.path import sep, expanduser
 import sys
 
@@ -37,14 +38,27 @@ class ChrisWindow(GridLayout):
 
     def __init__(self,**kwargs):
         super().__init__(**kwargs) #call __init__() of parent
-        self.cols= 1
-
+        self.cols= 1           #initial configuration for start page
+        
+        self._acquireInputFile()
         self._setupStartPage()
 
-    
+
     def getColorVector(self):
         """Returns the class variable color_vector."""
         return self.color_vector
+
+
+    def _acquireInputFile(self):
+        """Sets the input file depending on whether a CLI was given."""
+        if len(sys.argv) > 1:
+            self.cur_file= sys.argv[1]
+
+            #get full path of input file; may need to be updated
+            self.cur_file = os.path.abspath(self.cur_file)
+            print(self.cur_file)
+        else:
+            self.cur_file="None"
 
 
     def _setupStartPage(self):
@@ -67,18 +81,12 @@ class ChrisWindow(GridLayout):
         """Creates the widget items, their attributes, and their callbacks. """
         self.input_widget_store = []
         
-        #Label for file being edited
-        if len(sys.argv) > 1:
-            self.cur_file= sys.argv[1]
-        else:
-            self.cur_file="None"
-
         self.cur_file_label = Label(text="File being edited: {}".format(self.cur_file))
         self.add_widget(self.cur_file_label)
 
         #Apply changes button
         self.apply_but = Button(text="Apply Changes?",background_color=self.color_vector)
-        self.apply_but.bind(on_press=self._changeCallback)
+        self.apply_but.bind(on_press=self._applyChangesCallback)
         self.add_widget( self.apply_but )
         
         #Name of song
@@ -87,6 +95,7 @@ class ChrisWindow(GridLayout):
         
         self.name_input = TextInput(multiline=False)
         self.add_widget(self.name_input)
+        
         self.input_widget_store.append(self.name_input)
 
         #Artist of song
@@ -95,29 +104,14 @@ class ChrisWindow(GridLayout):
         
         self.artist_input = TextInput(multiline=False)
         self.add_widget(self.artist_input)
+        
         self.input_widget_store.append(self.artist_input)
         
         #Track Number of song
         self.track_num_label = Label(text="Track Number:", color=self.color_vector,font_size=20)
         self.add_widget( self.track_num_label)
         
-        ##Setup a grid within the parent grid layout
-        self.embedded_box = GridLayout(cols=2)
-        track_color= [0,0,1,1]
-        self.track_num_widget = Slider(min=1,max=20,value=1,value_track=True,
-                                        step=1,value_track_color=track_color)
-        self.track_num_inner_label = Label(text=str(self.track_num_widget.value),color=track_color)
-        
-        def updateInnerLabel(instance,value):
-            """Callback for updating inner label to display slider value."""
-            self.track_num_inner_label.text = str(value)
-            
-        self.track_num_widget.bind(value= updateInnerLabel)
-        
-        self.embedded_box.add_widget(self.track_num_widget)
-        self.embedded_box.add_widget(self.track_num_inner_label)
-        
-        self.add_widget(self.embedded_box)
+        self._createTrackNumberWidget()  #Setup a grid within the parent grid layout
         
         #Album name of song
         self.album_label = Label(text="Album Name:", color=self.color_vector,font_size=20)
@@ -125,6 +119,7 @@ class ChrisWindow(GridLayout):
         
         self.album_input = TextInput(multiline=False)
         self.add_widget(self.album_input)
+        
         self.input_widget_store.append(self.album_input)
         
         # Date of song
@@ -133,6 +128,7 @@ class ChrisWindow(GridLayout):
         
         self.date_input = TextInput(multiline=False)
         self.add_widget(self.date_input)
+        
         self.input_widget_store.append(self.date_input)
         
         # Genre of song
@@ -141,6 +137,7 @@ class ChrisWindow(GridLayout):
         
         self.genre_input = TextInput(multiline=False)
         self.add_widget(self.genre_input)
+        
         self.input_widget_store.append(self.genre_input)
        
         #Get pic button
@@ -154,7 +151,29 @@ class ChrisWindow(GridLayout):
         self.conversion_spinner = Spinner(text="No conversion.",values=("No conversion","Convert to Flac."))
         self.add_widget(self.conversion_spinner)
 
+    
 
+    def _createTrackNumberWidget(self):
+        """Creates a combined widget to be embedded into the editor view."""
+        self.embedded_box = GridLayout(cols=2)
+        track_color= [0,0,1,1]
+        self.track_num_widget = Slider(min=1,max=15,value=1,value_track=True,
+                                        step=1,value_track_color=track_color)
+        self.track_num_inner_label = Label(text=str(self.track_num_widget.value),
+                                            color=track_color,size_hint_x=0.3)
+        
+        def updateInnerLabel(instance,value):
+            """Callback for updating inner label to display slider value."""
+            self.track_num_inner_label.text = str(value)
+            
+        self.track_num_widget.bind(value= updateInnerLabel)
+        
+        self.embedded_box.add_widget(self.track_num_widget)
+        self.embedded_box.add_widget(self.track_num_inner_label)
+        
+        self.add_widget(self.embedded_box)
+
+    
     def _acquireCoverArt(self,instance):
         """Creates a window for the user to select a cover art image from the file system."""
         self.pic_selection = "No picture selected."
@@ -191,21 +210,64 @@ class ChrisWindow(GridLayout):
         self.file_chooser_window.dismiss()
 
 
-    def _changeCallback(self,instance):
+    def _applyChangesCallback(self,instance):
         """Callback() for button widget. """
         print("Button was pressed for the `{}` widget.\n".format(instance.text) )
-        for input_wig in self.input_widget_store:
-            if input_wig.text == "":
-                print("Input not fully submitted".format(instance.text))
-            else:
-                print(input_wig.text)
         
+        self.needToConvert = False #controls whether input file must be converted to flac
+        self.needToChangeCoverArt= False #controls whether the cover art image will be changed
+
+        self.tag_pairs = [] #a list of lists w/ 1st element as TAG to change & 2nd as value
+        self.possible_tags = ["TITLE","ARTIST","ALBUM","DATE","GENRE","TRACKNUMBER"]
+        
+        count = 0
+        for input_wig in self.input_widget_store:
+            pair = []
+            
+            if input_wig.text == "": #checks for empty strings & inapproriate names
+                print("Input is invalid -> \'{}\'".format(input_wig.text))
+            else:
+                pair.append(self.possible_tags[count]) #append corresponding tag
+                pair.append(input_wig.text)
+                self.tag_pairs.append(pair)
+                    
+            count = count +1
+
+        self.tag_pairs.append( ["TRACKNUMBER",self.track_num_widget.value] )
         print(int(self.track_num_widget.value))
-        print(self.pic_selection)
+        
+        self.tag_pairs.reverse() #changes TITLE tag last because it causes file name to change
+
         print(self.conversion_spinner.text)
 
+        if self.conversion_spinner.text != "No conversion." and ".flac" not in self.cur_file:
+            self.needToConvert= True
+
+        print(self.pic_selection)
+        if self.pic_selection != "No picture selected.":
+            self.needToChangeCoverArt= True
+
         self.clear_widgets()
+        
+        #maybe put a wait screen here: self._showWaitScreen()
+        self._applyChanges()
         self._setupFinishScreen()
+
+
+    def _applyChanges(self):
+        """Performs any changes requested via GUI."""
+        
+        if self.needToConvert:
+            self.cur_file = mcf.convertFileToFlac(self.cur_file) #convert to flac & update file name
+        
+        if self.needToChangeCoverArt:
+            mdt.setCoverArt(self.pic_selection,self.cur_file)
+        
+        if self.cur_file == 'None' or ".flac" not in self.cur_file:
+            print("Invaid input file.")
+        else:
+            for i in range(len(self.tag_pairs)):
+                mdt.changeTagValue(self.tag_pairs[i][0],self.tag_pairs[i][1],self.cur_file)
 
 
     def _setupFinishScreen(self):
@@ -222,5 +284,6 @@ class MetaEditorApp(App):
 
 
 if __name__ == "__main__":
+
     app = MetaEditorApp()
     app.run()

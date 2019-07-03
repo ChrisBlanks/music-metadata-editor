@@ -80,17 +80,21 @@ def convertFileToFlac(file):
     if ".wav" in extension:
         print("Input is `Wav` file type")
         convertWavToFlac(new_file_path)
+        os.remove(new_file_path) #remove copy
 
     elif ".ogg" in extension:
         print("Input is `Ogg` file type")
         convertOggToMP3(new_file_path)
+        os.remove(new_file_path)
         mp3_file_name = "{}.mp3".format(basename) #file should be of mp3 type at this point
         convertMP3ToFlac(mp3_file_name)
+        os.remove(mp3_file_name)
 
     elif ".mp3" in extension:
         print("Input is `MP3` file type")
         mp3_file_name = "{}.mp3".format(basename) #file should be of mp3 type at this point
         convertMP3ToFlac(mp3_file_name)
+        os.remove(mp3_file_name)
 
     else:
         assert False, "Unsupported type of file supplied as input: {}".format(new_file_path)
